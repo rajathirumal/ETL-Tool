@@ -166,3 +166,4 @@ cython_debug/
 *.vscode
 /archive
 /db
+.DS_Store
