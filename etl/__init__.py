@@ -1,6 +1,8 @@
 from .config_loader import ConfigLoader
+from .extract import Extract
 
-__all__ = ["ConfigLoader", "Landing", "load_meta"]
+
+__all__ = ["ConfigLoader", "Landing", "load_meta", "Extract"]
 
 __author__ = "Raja Thirumal Govindaraj <rajathirumal98@gmail.com>"
 __status__ = "development"

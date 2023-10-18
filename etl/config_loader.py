@@ -1,7 +1,7 @@
 import configparser
 import os
 
-from .etl_db import EtlDataBase
+from .etl_db import ConfigLoaderDbOps
 from . import utils
 
 
@@ -14,7 +14,7 @@ class ConfigLoader:
     def __init__(self):
         self.project_properties = configparser.ConfigParser()
         self._sanity_check()
-        self.db = EtlDataBase(
+        self.db = ConfigLoaderDbOps(
             db_folder=self.project_properties.get("project", "db.sqlite.folder"),
             schema="landing",
             db_type="sqlite",  # This is defaulted now
@@ -23,28 +23,13 @@ class ConfigLoader:
             ),
         )
 
-    def _sanity_check(self):
-        self._property_file_readability_check()
-        self._dir_check()
-        # configparser.
+    def _sanity_check(self) -> None:
+        utils.property_file_readability_check(
+            project_properties=self.project_properties
+        )
 
-    def _dir_check(self):
-        # schema_folder = self.project_properties.get("schema", "project.schema.folder")
         schema_folder = self.project_properties.get("project", "db.sqlite.folder")
         utils.dir_check(schema_folder)
-
-    def _property_file_readability_check(self):
-        property_file = "conf/project.properties"
-        if os.path.exists(property_file):
-            try:
-                with open(property_file) as f:
-                    self.project_properties.read_file(f)
-            except Exception as e:
-                raise Exception(
-                    f"Unable to read the property file: {property_file}"
-                ) from e
-        else:
-            raise FileNotFoundError(f"Property file not found: {property_file}")
 
     def _read_source_meta_config(self):
         load_config_file = os.path.join(
@@ -58,6 +43,7 @@ class ConfigLoader:
     def load_meta(self):
         """load your `source_meta.csv` file data to the landing.db"""
         config_content = self._read_source_meta_config()
+        utils.config_data_scanity_check(file_data=config_content)
         self.db.create_source_meta_table(table_columns=config_content)
 
 
