@@ -1,9 +1,8 @@
+from functools import wraps
 from chardet.universaldetector import UniversalDetector
 
 from configparser import ConfigParser
 import os
-
-import pandas as pd
 
 
 def dir_check(path: str) -> None:
@@ -13,22 +12,30 @@ def dir_check(path: str) -> None:
         print(f"Created : {path}")  # logging
 
 
-def property_file_readability_check(project_properties: ConfigParser) -> None:
-    """Check if you are able to read data from property file"""
-    property_file = "conf/project.properties"
-    if os.path.exists(property_file):
-        try:
-            with open(
-                property_file, mode="r", encoding=detect_encoding(property_file)
-            ) as f:
-                # Looks like you can fetch data form property file only if you read it once.
-                project_properties.read_file(f)
-        except Exception as e:
-            raise Exception(f"Unable to read the property file: {property_file}") from e
-        finally:
-            f.close()
-    else:
-        raise FileNotFoundError(f"Property file not found: {property_file}")
+def property_file_readability_check(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        print("Wrapper")
+        property_file = "conf/project.properties"
+        if os.path.exists(property_file):
+            try:
+                with open(
+                    property_file, mode="r", encoding=detect_encoding(property_file)
+                ) as f:
+                    # Looks like you can fetch data from a property file only if you read it once.
+                    self.project_properties.read_file(f)
+            except Exception as e:
+                raise Exception(
+                    f"Unable to read the property file: {property_file}"
+                ) from e
+            finally:
+                f.close()
+        else:
+            raise FileNotFoundError(f"Property file not found: {property_file}")
+        result = func(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
 def config_data_scanity_check(file_data: list[str]):

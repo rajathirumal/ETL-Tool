@@ -89,7 +89,7 @@ class CSVReader(ETL):
             _prediction[col[0]] = _determine_type(col[1:])
         _prediction["content"] = file_content
 
-        print(_prediction)
+        # print(_prediction)
 
 
 @dataclass

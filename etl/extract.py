@@ -26,10 +26,9 @@ class Extract(ETL):
             db_folder=self.project_properties.get("project", "db.sqlite.folder"),
         )
 
+    @utils.property_file_readability_check
     def _sanity_check(self):
-        utils.property_file_readability_check(
-            project_properties=self.project_properties
-        )
+        ...
 
     def load_landing(self):
         """Creates a landing tabled for every entry mentioned in the `LANDING_META_CONFIG` table
