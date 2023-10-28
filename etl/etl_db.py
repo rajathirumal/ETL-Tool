@@ -3,6 +3,11 @@ from dataclasses import dataclass
 from datetime import datetime
 import sqlite3 as sq
 import os
+from typing import Union
+
+from etl import utils
+from .etl_abc import ETL
+from .file_reader import CSVReader, XMLReader, JsonReader
 
 
 class EtlDataBase(ABC):
@@ -47,23 +52,23 @@ class ConfigLoaderDbOps(EtlDataBase):
         DROP_TABLE = f"DROP TABLE IF EXISTS {self.table_name}"
         try:
             self.cursor.execute(DROP_TABLE)
-            print(f"Table {self.table_name} dropped.")
+            print(f"Table {self.table_name} dropped.")  # logging
         except Exception as e:
-            print(f"Error dropping table: {self.table_name}")
-            print(str(e))
+            print(f"Error dropping table: {self.table_name}")  # logging
+            print(str(e))  # logging
 
     def create_table(self, table_columns):
         columns = ", ".join([f"{col} TEXT" for col in table_columns[0].split(",")])
         CREATE_TABLE = (
             f"CREATE TABLE IF NOT EXISTS {self.table_name} ({columns}, datetime TEXT)"
         )
-        print(f"Creating table with query: {CREATE_TABLE}")
+        print(f"Creating table with query: {CREATE_TABLE}")  # logging
         try:
             self.cursor.execute(CREATE_TABLE)
-            print(f"Table {self.table_name} created.")
+            print(f"Table {self.table_name} created.")  # logging
         except Exception as e:
-            print(f"Error creating table: {self.table_name}")
-            print(str(e))
+            print(f"Error creating table: {self.table_name}")  # logging
+            print(str(e))  # logging
 
     def add_rows(self, table_rows: list):
         value_place_holder = ("?," * (len(table_rows[0].split(",")) + 1))[:-1]
@@ -75,11 +80,11 @@ class ConfigLoaderDbOps(EtlDataBase):
         ]
         try:
             self.cursor.executemany(INSERT_INTO, data)
-            print(f"Inserted {len(data)} rows into {self.table_name}.")
+            print(f"Inserted {len(data)} rows into {self.table_name}.")  # logging
         except Exception as e:
-            print(f"Error inserting into {self.table_name}")
-            print(f"Query: {INSERT_INTO}")
-            print(f"Exception: {e}")
+            print(f"Error inserting into {self.table_name}")  # logging
+            print(f"Query: {INSERT_INTO}")  # logging
+            print(f"Exception: {e}")  # logging
 
     def _getTables(self):
         available_tables = []
@@ -87,7 +92,7 @@ class ConfigLoaderDbOps(EtlDataBase):
         self.cursor.execute(query)
         tables = self.cursor.fetchall()
         available_tables = [table[0] for table in tables]
-        print(f"Available tables: {available_tables}")
+        print(f"Available tables: {available_tables}")  # logging
         return available_tables
 
     def _getCursor(self) -> sq.Cursor:
@@ -116,7 +121,7 @@ class LandingDb(EtlDataBase):
             data = list(map(lambda x: list(x), self.cursor.fetchall()))
             return data
         except Exception as e:
-            print(e)
+            print(e)  # logging
 
     def _getCursor(self) -> sq.Cursor:
         db_path = os.path.abspath(os.path.join(self.db_folder, f"{self.schema}.db"))
@@ -128,17 +133,37 @@ class LandingDb(EtlDataBase):
 
         return connection.cursor()
 
-    def create_table(self, table_name: str):
+    def create_table(self, row: list):
         """Create table if not exist"""
-        ...
+
+        def _getReader(
+            file_name: str,
+            file_path: str,
+            file_format: str,
+        ) -> Union[CSVReader, XMLReader, JsonReader, str]:
+            switch = {
+                "csv": CSVReader(file_name=file_name, path=file_path),
+                "xml": XMLReader(file_name=file_name, path=file_path),
+                "json": JsonReader(file_name=file_name, path=file_path),
+            }
+            return switch.get(
+                file_format,
+                f"No such format or file format {file_format} not supported",
+            )
+
+        loader_type = row[1]
+        table_name = row[3]
+        file_path = row[4]
+        # print(f"creating table: {table_name}, from: {loader_type}")  # logging
+        reader = _getReader(
+            file_name=table_name,
+            file_path=file_path,
+            file_format=loader_type,
+        )
+        reader.get_column_info()
 
     def drop_table(self):
         ...
 
     def add_rows(self) -> None:
         ...
-
-
-if __name__ == "__main__":
-    db = LandingDb(schema="landing", db_folder="db")
-    db.read_table("LANDING_META_CONFIG")
