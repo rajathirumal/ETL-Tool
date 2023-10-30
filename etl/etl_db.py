@@ -5,8 +5,7 @@ import sqlite3 as sq
 import os
 from typing import Union
 
-from etl import utils
-from .etl_abc import ETL
+
 from .file_reader import CSVReader, XMLReader, JsonReader
 
 

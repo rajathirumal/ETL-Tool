@@ -1,8 +1,7 @@
 import configparser
-import os
 
-from etl.etl_abc import ETL
 
+from .etl_abc import ETL
 from . import utils
 from .etl_db import LandingDb
 
