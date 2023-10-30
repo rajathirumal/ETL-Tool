@@ -1,5 +1,6 @@
 from functools import wraps
 from chardet.universaldetector import UniversalDetector
+import pandas as pd
 
 from configparser import ConfigParser
 import os
