@@ -23,11 +23,8 @@ class ConfigLoader:
             ),
         )
 
+    @utils.property_file_readability_check
     def _sanity_check(self) -> None:
-        utils.property_file_readability_check(
-            project_properties=self.project_properties
-        )
-
         schema_folder = self.project_properties.get("project", "db.sqlite.folder")
         utils.dir_check(schema_folder)
 

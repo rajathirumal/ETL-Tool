@@ -85,11 +85,23 @@ class CSVReader(ETL):
             reader = csv.reader(f, delimiter=",")
             file_content = list(reader)
             transpose_content = list(zip(*file_content))
+        column_dtype = []
         for col in transpose_content:
-            _prediction[col[0]] = _determine_type(col[1:])
+            column_dtype.append(_determine_type(col[1:]))
+            # _prediction[col[0]] = _determine_type(col[1:])
+        _prediction["datatype"] = column_dtype
         _prediction["content"] = file_content
-
-        # print(_prediction)
+        for content in _prediction["content"][1:]:
+            for i, d in enumerate(content):
+                if (
+                    _prediction["datatype"][i] == "REAL"
+                    or _prediction["datatype"][i] == "INTEGER"
+                ):
+                    content[i] = float(d)
+                else:
+                    content[i] = content[i]
+        print(_prediction)
+        return _prediction
 
 
 @dataclass

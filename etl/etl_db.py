@@ -114,6 +114,8 @@ class LandingDb(EtlDataBase):
         self.cursor = self._getCursor()
 
     def read_table(self, table_name: str) -> list[list]:
+        """Always a full select on `LANDING_META_CONFIG`,
+        This is OK as this table is always going to be a truncate and load"""
         SELECT_ALL = f"""SELECT * FROM {table_name}"""
         try:
             self.cursor.execute(SELECT_ALL)
@@ -133,7 +135,9 @@ class LandingDb(EtlDataBase):
         return connection.cursor()
 
     def create_table(self, row: list):
-        """Create table if not exist"""
+        """Create table if not exist,
+
+        Always landing is a drop and recreate action"""
 
         def _getReader(
             file_name: str,
@@ -150,19 +154,61 @@ class LandingDb(EtlDataBase):
                 f"No such format or file format {file_format} not supported",
             )
 
+        self.table_name = row[0]
         loader_type = row[1]
-        table_name = row[3]
-        file_path = row[4]
-        # print(f"creating table: {table_name}, from: {loader_type}")  # logging
+        file_path = row[3]
+        print(f"creating table: {self.table_name}, from: {loader_type}")  # logging
         reader = _getReader(
-            file_name=table_name,
+            file_name=self.table_name,
             file_path=file_path,
             file_format=loader_type,
         )
-        reader.get_column_info()
+        col_info = reader.get_column_info()
 
-    def drop_table(self):
-        ...
+        # Drop tabel if exist
+        self.drop_table(table=self.table_name)
+        # Create a fresh table
+        self._create_table_insert(
+            table_name=self.table_name,
+            column_name=col_info["content"][0],
+            column_type=col_info["datatype"],
+        )
+        # Add data to the table
+        self.add_rows(table_rows=col_info["content"][1:])
 
-    def add_rows(self) -> None:
-        ...
+    def _create_table_insert(self, table_name, column_name, column_type):
+        CREATE_TABLE = f"CREATE TABLE IF NOT EXISTS {table_name}("
+        for c_name, c_type in zip(column_name, column_type):
+            CREATE_TABLE += f"{c_name} {c_type},"
+        CREATE_TABLE = CREATE_TABLE[:-1] + ", datetime TEXT);"
+
+        print(f"Creating table with query: {CREATE_TABLE}")  # logging
+        try:
+            self.cursor.execute(CREATE_TABLE)
+            print(f"Table {table_name} created.")  # logging
+        except Exception as e:
+            print(f"Error creating table: {table_name}")  # logging
+            print(str(e))  # logging
+
+    def drop_table(self, table):
+        DROP_TABLE = f"DROP TABLE IF EXISTS {table}"
+        try:
+            self.cursor.execute(DROP_TABLE)
+            print(f"Table {table} dropped.")  # logging
+        except Exception as e:
+            print(f"Error dropping table: {table}")  # logging
+            print(str(e))  # logging
+
+    def add_rows(self, table_rows: list):
+        value_place_holder = ("?," * (len(table_rows[0]) + 1))[:-1]
+        INSERT_INTO = f"INSERT INTO {self.table_name} VALUES ({value_place_holder})"
+        current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%f")
+        data = [tuple(item + [current_timestamp]) for item in table_rows]
+        print(INSERT_INTO)
+        try:
+            self.cursor.executemany(INSERT_INTO, data)
+            print(f"Inserted {len(data)} rows into {self.table_name}.")  # logging
+        except Exception as e:
+            print(f"Error inserting into {self.table_name}")  # logging
+            print(f"Query: {INSERT_INTO}")  # logging
+            print(f"Exception: {e}")  # logging
