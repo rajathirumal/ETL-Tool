@@ -23,7 +23,7 @@ Activate to the venv
 ```sh
 source venv/bin/activate 
 ```
-Install the required packages listed in [PipFile](/PipFile)
+Install the required packages listed in [PipFile](/PipFile). Also attached a [requirements](/requirements) file for reference.
 ```sh
 pip install -r PipFile
 ```
