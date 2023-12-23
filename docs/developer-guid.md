@@ -28,8 +28,12 @@ Install the required packages listed in [PipFile](/PipFile). Also attached a [re
 pip install -r PipFile
 ```
 
-
 ### Sample Data
+> All the sample data for this project can be found in the [Archive](/archive) directory.
+
+> All the data in the archive directory are random. This does not contain any PII or is not intended to be a PII.
+
+### 🤖 Starting point of the project
 The [project.properties](/conf/project.properties) is the soul for the whole project. The following properties are ment to be as the content of this file.
 
 

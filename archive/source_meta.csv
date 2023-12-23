@@ -1,0 +1,5 @@
+filename,format,kind,path
+hashtotal,csv,meta,archive
+account,csv,null,archive
+customer,csv,null,archive
+products,csv,null,archive
