@@ -164,6 +164,5 @@ cython_debug/
 *.todo
 *.txt
 *.vscode
-/archive
 /db
 .DS_Store
